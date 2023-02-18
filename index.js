@@ -1,14 +1,13 @@
-const Discord = require('discord.js');
-const {
-	prefix,
-	token,
-} = require('./config.json');
+const { Client, IntentsBitField, Collection, Events } = require('discord.js');
+
 const fs = require('node:fs');
 const path = require('node:path');
-const ytdl = require('ytdl-core');
+const { TOKEN } = require('./config');
 
-const client = new Discord.Client({ intents: 1052160 });
-client.commands = new Discord.Collection();
+// Intents.FLAGS.GUILD_VOICE_STATES
+// 1052160
+const client = new Client({ intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.GuildVoiceStates]});
+client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
@@ -24,11 +23,11 @@ for (const file of commandFiles) {
 }
 
 
-client.login(token);
+client.login(TOKEN);
 
-client.on(Discord.Events.InteractionCreate, async interaction => {
+client.on(Events.InteractionCreate, async interaction => {
 	if (!interaction.isChatInputCommand()) return;
-
+	
 	const command = interaction.client.commands.get(interaction.commandName);
 
 	if (!command) {
