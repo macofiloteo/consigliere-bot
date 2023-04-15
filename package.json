@@ -12,6 +12,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "libsodium-wrappers": "^0.7.11",
     "lodash": "^4.17.21",
+    "play-dl": "^1.9.6",
     "youtube-search-without-api-key": "^1.0.7",
     "ytdl-core": "^4.11.2"
   },

@@ -1,8 +1,7 @@
-const ytdl = require('ytdl-core');
+const play_dl = require('play-dl');
 const _ = require('lodash');
-const yt = require('youtube-search-without-api-key');
 const { SlashCommandBuilder } = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, getVoiceConnection, AudioPlayerStatus } = require('@discordjs/voice');
+const { joinVoiceChannel, getVoiceConnection, AudioPlayerStatus } = require('@discordjs/voice');
 const { addSongToCache, shiftSongQueueAndGetNextSongCache, getGuildQueueData, initializeGuild } = require('../song-cache');
 
 
@@ -27,23 +26,25 @@ const playFunction = async (interaction) => {
 	if (queryString.includes('https') || queryString.includes('www')) {
 		videoURL = queryString
 	} else {
-		const videos = await yt.search(queryString);
+		const videos = await play_dl.search(queryString, {
+            limit: 1
+        })
 		if (_.isEmpty(videos)) {
 			await interaction.reply(`Cant find ${queryString} on Youtube!`);
 			return;
 		}
-		videoURL = videos[0].snippet.url
+		videoURL = videos[0].url
 	}
-	songInfo = await ytdl.getInfo(videoURL);
-	if (_.isEmpty(songInfo)) {
+	let yt_info = await play_dl.video_info(videoURL)
+	if (_.isEmpty(yt_info)) {
 		await interaction.reply(`Cant find ${queryString} on Youtube!`);
 		return;
 	}
 	const song = {
-		title: songInfo.videoDetails.title,
-		url: songInfo.videoDetails.video_url,
+		title: yt_info.video_details.title,
+		url: videoURL,
 	};
-	const stream = await ytdl(song.url, {filter: "audioonly"});
+	const stream = await play_dl.stream_from_info(yt_info)
 	addSongToCache(guildID, song, stream)
 
 	let voiceConnection = await getVoiceConnection(guildID);

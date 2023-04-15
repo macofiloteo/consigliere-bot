@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const { createAudioResource, createAudioPlayer } = require('@discordjs/voice');
+const { createAudioResource, createAudioPlayer, NoSubscriberBehavior } = require('@discordjs/voice');
 
 const cache = {}
 
@@ -32,7 +32,9 @@ const addSongToCache = (guildID, songMetadata, songStream) => {
     const { songQueue } = guildQueueData;
     songQueue.push({
         metadata: songMetadata,
-        resource: createAudioResource(songStream)
+        resource: createAudioResource(songStream.stream, {
+            inputType: songStream.type
+        })
     });
 }
 
@@ -40,7 +42,13 @@ const initializeGuild = (guildID) => {
     cache[guildID] = {
         isIdle: false,
         songQueue: [],
-        player: createAudioPlayer()
+        player: createAudioPlayer(
+            {
+                behaviors: {
+                    noSubscriber: NoSubscriberBehavior.Play
+                }
+            }
+        )
     }
     return cache[guildID];
 };
