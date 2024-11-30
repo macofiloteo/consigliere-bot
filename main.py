@@ -1,4 +1,4 @@
-from discord import Intents, Interaction
+from discord import Intents, Interaction, app_commands
 from discord.ext import commands
 from discord.utils import get
 
@@ -37,15 +37,14 @@ async def on_ready():
 	for guild in client.guilds:
 		# PRINT THE SERVER'S ID AND NAME.
 		print(f"- {guild.id} (name: {guild.name})")
-
 		# INCREMENTS THE GUILD COUNTER.
 		guild_count = guild_count + 1
+	await client.tree.sync()
 	print("Consigliere is in " + str(guild_count) + " guilds.")
 
 
 @client.tree.command(name='ping', description='Replies with PONG and syncs the tree.')
 async def ping(interaction):
-    await client.tree.sync(guild=interaction.guild)
     await interaction.response.send_message('PONG!')
 
 
@@ -62,18 +61,16 @@ async def skip(interaction: Interaction):
 
 
 @client.tree.command(name='play', description='Searches for a song and plays it in the voice channel the current user is in')
-async def play(interaction: Interaction):
+@app_commands.describe(query="The search query for the song you want to play")
+async def play(interaction: Interaction, query: str):
     db_session = create_session() # temporarily here, will move it to a better place
     voice_client = await get_voice_client(interaction)    
-    params = interaction.data['options']
-    if not params:
-        await interaction.response.send_message("No parameters provided", ephemeral=True)
-        return
-    if not params[0]['value']:
-        await interaction.response.send_message("No search query provided", ephemeral=True)
+
+    if not query:
+        await interaction.response.send_message("No search query provided", ephemeral=False)
     
-    search_query = params[0]['value']
-    await interaction.response.send_message(f"Searching for {search_query}...", ephemeral=True)
+    search_query = query
+    await interaction.response.send_message(f"Searching for {search_query}...", ephemeral=False)
     try:
         dl_file_path = get_audio_path(db_session, search_query)
     except FileNotFoundError as e:
@@ -87,5 +84,6 @@ async def play(interaction: Interaction):
 @client.tree.command(name='stop')
 async def stop(interaction: Interaction):
     await interaction.response.send_message('Stopping...')
+
 
 client.run(DISCORD_TOKEN)
