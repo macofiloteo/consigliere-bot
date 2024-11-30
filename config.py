@@ -1,0 +1,4 @@
+import os
+
+YT_DOWNLOAD_PATH = os.getenv('YT_DOWNLOAD_PATH')
+DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
