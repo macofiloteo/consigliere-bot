@@ -68,7 +68,7 @@ def download_video(search_query: str) -> str | None:
             else:
                 search_results = ydl.extract_info(final_query, download=True)
                 yt_id = search_results['id']
-                filename = search_results['filename']
+                filename = search_results['requested_downloads'][0]['filename']
     except Exception as e:
         logger.error(f"Failed to download video ytsearch:{search_query}: {e}")
     return filename, yt_id

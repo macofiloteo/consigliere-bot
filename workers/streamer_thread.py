@@ -59,7 +59,8 @@ class AudioStreamerWorker:
         await self.voice_client.disconnect()
     
     def start_stream(self) -> None:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         loop.run_until_complete(self._start_stream())
 
 class AudioStreamerManager:
