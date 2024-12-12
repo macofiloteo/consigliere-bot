@@ -1,6 +1,6 @@
 from threading import Thread
+from datetime import datetime, timedelta
 from time import sleep
-
 from discord import FFmpegPCMAudio
 
 from exceptions import NoWorkerExists
@@ -38,8 +38,12 @@ class AudioStreamerWorker:
         self.status = StatusEnum.PLAYING
 
     def start_stream(self) -> None:
+        start_time = datetime.now()
         while True:
             if not self.queued_files or self.now_playing or self.status == StatusEnum.IDLE:
+                if (start_time - datetime.now()) > timedelta(minutes=5):
+                    logger.info("Worker has been idle for 5 minutes. Killing thread.")
+                    break
                 sleep(1)
                 continue
             file_path = self.queued_files.pop(0)
@@ -50,7 +54,8 @@ class AudioStreamerWorker:
                 self.voice_client.play(FFmpegPCMAudio(executable='/usr/bin/ffmpeg', source=file_path), after=lambda e: self._clear_now_playing())
             except Exception as e:
                 raise e
-
+            start_time = datetime.now()
+        self.voice_client.disconnect()
 
 class AudioStreamerManager:
     def __init__(self) -> None:
@@ -67,6 +72,9 @@ class AudioStreamerManager:
 
     def queue_audio_file(self, guild, voice_client, file_path: str) -> None:
         worker = self.get_worker(guild.id)
+        if worker and not worker.stream_thread.is_alive():
+            worker = None
+            logger.info("Worker killed. Advising to create a new one.")
         if not worker:
             worker = self.create_worker(guild, voice_client)
         worker.queue(file_path)

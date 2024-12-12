@@ -1,11 +1,13 @@
 import json
 from time import sleep
 import pathlib
-from config import YT_DOWNLOAD_PATH
+from config import YT_DOWNLOAD_PATH, COOKIES_FROM_BROWSER
 from threading import Thread
 import yt_dlp
 
 from logger import logger
+
+YOUTUBE_URL = 'youtube.com/watch?'
 
 class AudioDownloaderManager():
     def __init__(self) -> None:
@@ -37,7 +39,7 @@ def download_video(search_query: str) -> str | None:
     ydl_opts = {
         'format': 'm4a/bestaudio/best',
         'cookiefile': 'cookies.txt',
-        'cookiesfrombrowser': ('chrome',),
+        'cookiesfrombrowser': (COOKIES_FROM_BROWSER,),
         # ℹ️ See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
         'postprocessors': [{  # Extract audio using ffmpeg
             'key': 'FFmpegExtractAudio',
@@ -50,13 +52,16 @@ def download_video(search_query: str) -> str | None:
         },
         'cachedir': 'cacheyt/',
         # 'progress_hooks': [test_hook],
-        'extractor_args': {'youtube': {'player_client': ['web']}}
+        'extractor_args': {'youtube': {'player_client': ['web']}},
     }
     filename = None
     yt_id = None
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            search_results = ydl.extract_info(f"ytsearch1:{search_query}", download=True)
+            final_query = search_query
+            if YOUTUBE_URL not in search_query:
+                final_query = f"ytsearch1:{search_query}"
+            search_results = ydl.extract_info(final_query, download=True)
             entry = search_results['entries'][0]['requested_downloads'][0]
             filename = entry['filepath']
             yt_id = entry['id']
