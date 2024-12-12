@@ -41,7 +41,7 @@ class AudioStreamerWorker:
         start_time = datetime.now()
         while True:
             if not self.queued_files or self.now_playing or self.status == StatusEnum.IDLE:
-                if (start_time - datetime.now()) > timedelta(minutes=5):
+                if (datetime.now() - start_time) > timedelta(minutes=5):
                     logger.info("Worker has been idle for 5 minutes. Killing thread.")
                     break
                 sleep(1)

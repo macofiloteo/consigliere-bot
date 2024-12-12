@@ -52,7 +52,7 @@ def download_video(search_query: str) -> str | None:
         },
         'cachedir': 'cacheyt/',
         # 'progress_hooks': [test_hook],
-        'extractor_args': {'youtube': {'player_client': ['web']}},
+        'extractor_args': {'youtube': {'player_client': ['ios']}},
     }
     filename = None
     yt_id = None
