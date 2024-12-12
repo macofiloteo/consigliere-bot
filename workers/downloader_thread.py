@@ -62,8 +62,9 @@ def download_video(search_query: str) -> str | None:
             if YOUTUBE_URL not in search_query:
                 final_query = f"ytsearch1:{search_query}"
                 search_results = ydl.extract_info(final_query, download=True)
-                entry = search_results['entries'][0]['requested_downloads'][0]
-                filename = entry['filepath']
+                entry = search_results['entries'][0]
+                requested_download = entry['requested_downloads'][0]
+                filename = requested_download['filepath']
                 yt_id = entry['id']
             else:
                 search_results = ydl.extract_info(final_query, download=True)
