@@ -75,7 +75,7 @@ class AudioStreamerManager:
         self.workers[guild_id] = worker
         return worker
 
-    async def queue_audio_file(self, guild, voice_client, file_path: str) -> None:
+    def queue_audio_file(self, guild, voice_client, file_path: str) -> None:
         worker = self.get_worker(guild.id)
         if worker and not worker.stream_thread.is_alive():
             worker = None
