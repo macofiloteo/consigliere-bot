@@ -1,3 +1,4 @@
+import asyncio
 from threading import Thread
 from datetime import datetime, timedelta
 from time import sleep
@@ -37,7 +38,7 @@ class AudioStreamerWorker:
     def play(self) -> None:
         self.status = StatusEnum.PLAYING
 
-    def start_stream(self) -> None:
+    async def _start_stream(self) -> None:
         start_time = datetime.now()
         while True:
             if not self.queued_files or self.now_playing or self.status == StatusEnum.IDLE:
@@ -55,7 +56,11 @@ class AudioStreamerWorker:
             except Exception as e:
                 raise e
             start_time = datetime.now()
-        self.voice_client.disconnect()
+        await self.voice_client.disconnect()
+    
+    def start_stream(self) -> None:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._start_stream())
 
 class AudioStreamerManager:
     def __init__(self) -> None:
@@ -70,7 +75,7 @@ class AudioStreamerManager:
         self.workers[guild_id] = worker
         return worker
 
-    def queue_audio_file(self, guild, voice_client, file_path: str) -> None:
+    async def queue_audio_file(self, guild, voice_client, file_path: str) -> None:
         worker = self.get_worker(guild.id)
         if worker and not worker.stream_thread.is_alive():
             worker = None
