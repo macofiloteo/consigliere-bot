@@ -61,10 +61,14 @@ def download_video(search_query: str) -> str | None:
             final_query = search_query
             if YOUTUBE_URL not in search_query:
                 final_query = f"ytsearch1:{search_query}"
-            search_results = ydl.extract_info(final_query, download=True)
-            entry = search_results['entries'][0]['requested_downloads'][0]
-            filename = entry['filepath']
-            yt_id = entry['id']
+                search_results = ydl.extract_info(final_query, download=True)
+                entry = search_results['entries'][0]['requested_downloads'][0]
+                filename = entry['filepath']
+                yt_id = entry['id']
+            else:
+                search_results = ydl.extract_info(final_query, download=True)
+                yt_id = search_results['id']
+                filename = search_results['filename']
     except Exception as e:
         logger.error(f"Failed to download video ytsearch:{search_query}: {e}")
     return filename, yt_id
