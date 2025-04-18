@@ -2,34 +2,14 @@ from discord import Intents, Interaction, app_commands
 from discord.ext import commands
 from discord.utils import get
 
+from bll.network import is_ip_address_online, list_uphosts, wake_host
 from config import DISCORD_TOKEN
 
-from bll.audio import get_audio_path
-from dal.database import create_session
-from exceptions import NoWorkerExists
 from workers.streamer_thread import AudioStreamerManager
 
 
-client = commands.Bot(command_prefix='/', intents=Intents(guilds=True, guild_messages=True, voice_states=True))
+client = commands.Bot(command_prefix='/', intents=Intents(guilds=True, guild_messages=True))
 audio_worker = AudioStreamerManager()
-
-async def get_voice_client(interaction: Interaction):
-    user_voice = interaction.user.voice
-    if not user_voice:
-        # user is not in a voice channel - exit
-        await interaction.response.send_message("You are not in a voice channel", ephemeral=True)
-        return
-    bot_voice = get(client.voice_clients, guild=interaction.guild)
-    if bot_voice:
-        # we're in a channel already
-        if bot_voice.channel.id != user_voice.channel.id:
-            await bot_voice.move_to(user_voice.channel)
-        voice_client = bot_voice
-    else:
-        await user_voice.channel.connect()
-        voice_client = get(client.voice_clients, guild=interaction.guild)
-    return voice_client
-
 
 @client.event
 async def on_ready():
@@ -43,47 +23,25 @@ async def on_ready():
 	print("Consigliere is in " + str(guild_count) + " guilds.")
 
 
-@client.tree.command(name='ping', description='Replies with PONG and syncs the tree.')
-async def ping(interaction):
-    await interaction.response.send_message('PONG!')
+@client.tree.command(name='ping', description='Check if a machine is online based on IP address.')
+@app_commands.describe(ip_address="The IP address of the machine you want to check")
+async def ping(interaction: Interaction, ip_address: str):
+    response = f"The IP Address {ip_address} is"
+    if is_ip_address_online(ip_address):
+        response = response + " offline."
+    else:
+        response = response + " online!"
+    await interaction.response.send_message(response)
 
 
-@client.tree.command(name='skip', description='Skips the currently playing audio')
-async def skip(interaction: Interaction):
-    # Validate user is in a voice channel
-    await get_voice_client(interaction)
-
+@client.tree.command(name='wake')
+@app_commands.describe(mac_address="The MAC Address of the machine you want to turn on")
+async def wake(interaction: Interaction, mac_address: str):
     try:
-        audio_worker.skip_now_playing(interaction.guild)
-        await interaction.response.send_message('Skipped!')
-    except NoWorkerExists:
-        await interaction.response.send_message("No audio is currently playing or you are not in a voice channel", ephemeral=True)
-
-
-@client.tree.command(name='play', description='Searches for a song and plays it in the voice channel the current user is in')
-@app_commands.describe(query="The search query for the song you want to play")
-async def play(interaction: Interaction, query: str):
-    db_session = create_session() # temporarily here, will move it to a better place
-    voice_client = await get_voice_client(interaction)    
-
-    if not query:
-        await interaction.response.send_message("No search query provided", ephemeral=False)
-    
-    search_query = query
-    await interaction.response.send_message(f"Searching for {search_query}...", ephemeral=False)
-    try:
-        dl_file_path = get_audio_path(db_session, search_query)
-    except FileNotFoundError as e:
-        await interaction.edit_original_response(content=f"Could not find audio for {search_query}")
-        return
-    audio_worker.queue_audio_file(interaction.guild, voice_client, dl_file_path)
-    db_session.commit()
-    db_session.close()
-    return
-
-@client.tree.command(name='stop')
-async def stop(interaction: Interaction):
-    await interaction.response.send_message('Stopping...')
+        wake_host(mac_address)
+        await interaction.response.send_message(f"WOL Magic Packet sent successfully.")
+    except:
+        await interaction.response.send_message(f"Failed to send the WOL Magic Packet.")
 
 
 client.run(DISCORD_TOKEN)
