@@ -28,9 +28,9 @@ async def on_ready():
 async def ping(interaction: Interaction, ip_address: str):
     response = f"The IP Address {ip_address} is"
     if is_ip_address_online(ip_address):
-        response = response + " offline."
-    else:
         response = response + " online!"
+    else:
+        response = response + " offline!"
     await interaction.response.send_message(response)
 
 
