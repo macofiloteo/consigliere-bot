@@ -10,7 +10,7 @@ def list_uphosts(ip_range: str):
 def is_ip_address_online(ip_address: str):
     scanner = nmap.PortScanner()
     scan_results = scanner.scan(hosts=ip_address, arguments="-sn")['nmap']
-    return scan_results['scanstats']['uphosts'] > 0
+    return int(scan_results['scanstats']['uphosts']) > 0
 
 def wake_host(mac_address):
     send_magic_packet(mac_address)
